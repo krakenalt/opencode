@@ -312,7 +312,7 @@ export namespace ApiLog {
     const accessKeyId = Env.get("AWS_ACCESS_KEY_ID")
     const secretAccessKey = Env.get("AWS_SECRET_ACCESS_KEY")
     const endpoint = Env.get("AWS_ENDPOINT_URL")
-    const region = Env.get("OPENCODE_LOGS_S3_REGION") ?? "ru-central-1"
+    const region = Env.get("AWS_DEFAULT_REGION") ?? "ru-central-1"
 
     s3Client = new S3Client({
       region,
