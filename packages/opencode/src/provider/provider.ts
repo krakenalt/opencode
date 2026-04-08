@@ -56,6 +56,7 @@ import { GoogleAuth } from "google-auth-library"
 import { ProviderTransform } from "./transform"
 import { Installation } from "../installation"
 import { ModelID, ProviderID } from "./schema"
+import { ApiLog } from "@/telemetry/api-log"
 
 export namespace Provider {
   const log = Log.create({ service: "provider" })
@@ -1388,6 +1389,10 @@ export namespace Provider {
           const customFetch = options["fetch"]
           const chunkTimeout = options["chunkTimeout"]
           delete options["chunkTimeout"]
+          const apiLogContext = {
+            directory: Instance.directory,
+            source: `${model.providerID}/${model.id}`,
+          }
 
           options["fetch"] = async (input: any, init?: BunFetchRequestInit) => {
             const fetchFn = customFetch ?? fetch
@@ -1419,14 +1424,16 @@ export namespace Provider {
               }
             }
 
+            const telemetry = await ApiLog.prepare(input, opts, apiLogContext)
             const res = await fetchFn(input, {
               ...opts,
               // @ts-ignore see here: https://github.com/oven-sh/bun/issues/16682
               timeout: false,
             })
 
-            if (!chunkAbortCtl) return res
-            return wrapSSE(res, chunkTimeout, chunkAbortCtl)
+            const wrapped = chunkAbortCtl ? wrapSSE(res, chunkTimeout, chunkAbortCtl) : res
+            ApiLog.capture(wrapped, telemetry)
+            return wrapped
           }
 
           const bundledFn = BUNDLED_PROVIDERS[model.api.npm]
