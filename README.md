@@ -61,6 +61,67 @@ mise use -g opencode               # Any OS
 nix run nixpkgs#opencode           # or github:anomalyco/opencode for latest dev branch
 ```
 
+### Логирование
+# opencode
+
+## Запуск через MinIO
+
+Основной способ локального запуска в этом репозитории:
+
+```bash
+./run-opencode-with-minio.sh
+```
+
+Скрипт нужно запускать из корня репозитория, потому что он:
+
+1. Читает переменные из `./.env`.
+2. Подставляет значения для S3/MinIO, если они не заданы.
+3. Запускает `bun run dev -- --print-logs --log-level DEBUG`.
+
+## Что нужно перед запуском
+
+1. Установить зависимости:
+
+```bash
+bun install
+```
+
+2. Поднять MinIO на `http://localhost:9000`.
+3. Убедиться, что в MinIO существует bucket `my_bucket`, либо переопределить его через переменную `OPENCODE_LOGS_S3_BUCKET`.
+4. Подготовить `.env` в корне репозитория, если проекту нужны дополнительные переменные.
+
+## Переменные по умолчанию
+
+Если переменные не заданы в окружении или в `.env`, скрипт использует такие значения:
+
+```bash
+AWS_ACCESS_KEY_ID=minioadmin
+AWS_SECRET_ACCESS_KEY=minioadmin
+AWS_ENDPOINT_URL=http://localhost:9000
+AWS_DEFAULT_REGION=ru-central-1
+OPENCODE_LOGS_S3_BUCKET=my_bucket
+OPENCODE_LOGS_S3_PREFIX=dev
+```
+
+Логи телеметрии будут зеркалироваться в указанный S3-совместимый bucket через MinIO.
+
+## Что именно запускается
+
+Команда `bun run dev` берется из корневого `package.json` и стартует пакет `packages/opencode`:
+
+```bash
+bun run --cwd packages/opencode --conditions=browser src/index.ts --print-logs --log-level DEBUG
+```
+
+## Если запуск не стартует
+
+Проверьте:
+
+1. Что команда выполняется из корня репозитория.
+2. Что MinIO доступен по `AWS_ENDPOINT_URL`.
+3. Что bucket существует и учетные данные подходят.
+4. Что `bun install` уже был выполнен.
+
 > [!TIP]
 > Remove versions older than 0.1.x before installing.
 
